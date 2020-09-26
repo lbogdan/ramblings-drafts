@@ -1,11 +1,11 @@
-# Vue.js, eslint and prettier - why can't we be friends?
+# Vue.js, ESLint and Prettier - Why can't we be friends?
 
 ## Motivation etc.
 
 (?)
 
 ## Life goals
-- have a consistent (and pleasant!) `eslint` linting experience in VSCode, `vue-cli-service` and on the command line
+- have a consistent (and pleasant!) `eslint` linting experience in VSCode, `vue-cli-service` and on the command line, inside a Vue.js project
 - use `prettier` to auto-format code on save or from the command line
 - make `eslint` and `prettier` behave like friends, not enemies fighting over your code
 
@@ -175,7 +175,7 @@ By default (and with the `lintOnSave` configuration from the previous section), 
 ```
 $ yarn build
 yarn run v1.22.5
-$ yarn vue-cli-service build
+$ vue-cli-service build
 $ D:\work\vue-simple-app\node_modules\.bin\vue-cli-service build
 
 /  Building for production...
@@ -201,8 +201,56 @@ error Command failed with exit code 1.
 info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
 ```
 
-This is useful in CI, to do the linting and building in the same step, and not have an additional linting step.
+This is useful in CI, to do the linting and building in the same step vs. having an additional linting step.
 
-Why a .js config? Because it allows you to programatically generate the config. This can be useful if you want to enable or disable rules depending on the environment, for example. We'll see how to do this in a bit.
+### ESLint configuration
 
+Now that we saw how `eslint` is supposed to behave with a default Vue CLI configuration, let's see how we can bend it to our will. While `eslint` supports a [handful of configuration file types](https://eslint.org/docs/user-guide/configuring#configuration-file-formats), Vue CLI uses `.eslintrc.js`, which by default has the following contents:
 
+```js
+// .eslintrc.js
+module.exports = {
+  root: true,
+  env: {
+    node: true
+  },
+  'extends': [
+    'plugin:vue/essential',
+    'eslint:recommended'
+  ],
+  parserOptions: {
+    parser: 'babel-eslint'
+  },
+  rules: {
+    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
+    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off'
+  }
+}
+```
+
+Why a `.js` config? Because it allows us to programatically generate the config. This can be very useful if we want to enable, disable or change rules config depending on the environment, like we can see above.
+
+The most important part (and the only one we'll be fiddling with) of the `eslint` config is the linting rules. Instead of listing all the rules in our project's config, we can extend preset configs carefully crafted by people smarter than us. We can see the default Vue CLI `eslint` config extends two such presets: [`node_modules/eslint-plugin-vue/lib/config/essential.js`](https://unpkg.com/browse/eslint-plugin-vue@6.2.2/lib/configs/essential.js) and [`node_modules/eslint/conf/eslint-recommended.js`](https://unpkg.com/browse/eslint@6.8.0/conf/eslint-recommended.js). If we want to customize these presets, we can override the rules config with the `rules: { ... }` object. We can see in the default config the rules `no-console` and `no-debugger` are turned off in development, and configured to generate a warning when building for production (note that, by default, the production build will still fail if we use any `console.log()`s or `debugger`s in our code, ever if they're configured as warnings).
+
+### Some better defaults, maybe?
+
+(?)
+
+### Introducing Prettier - your handsome code pal
+
+(?)
+
+- `yarn add --dev prettier eslint-plugin-prettier @vue/eslint-config-prettier`
+
+```js
+// .eslintrc.js
+module.exports = {
+  // ...
+  'extends': [
+    'plugin:vue/essential',
+    'eslint:recommended',
+    '@vue/prettier'
+  ],
+  // ...
+}
+```

@@ -1,3 +1,5 @@
+# Vue.js, eslint and prettier - why can't we be friends?
+
 ## Motivation etc.
 
 (?)
@@ -53,15 +55,27 @@ For this tutorial(?) I'm using the following minimal VSCode configuration:
 
 I also (only) have `Vetur` and `ESLint` extensions installed.
 
-Let's open the app folder in VSCode and open the `src/Vue.app` file. We should see a dialog asking us if we want to use our project's local `eslint` version from `node_modules`: [image 1] This allows us to use different `eslint` versions for different projects, so of course we're gonna accept!
+Let's open the app folder in VSCode and open the `src/Vue.app` file. We should see a dialog asking us if we want to use our project's local `eslint` version from `node_modules`:
 
-Let's now see what happens if we make the most common (and probably the most hated, too) code inaccuracy (because it's not really a mistake) - declaring an unused variable: add `const a = 10` on a new line right under the `import`. We can immediately see a red squiggly under `a`, signaling that there's something wrong with our code. Hovering over it we get: [image 2] From `eslint(no-unused-vars)` we can deduce it's an `eslint` error because we're breaking the `no-unused-vars` rule. If a rule sounds weird to you (they usually do!) and want to know more you can click on "Quick Fix" -> "Show documentation for ...". Doing that in our case gets us to the [`no-unused-vars` rule documentation page](https://eslint.org/docs/rules/no-unused-vars).
+![](/images/eslint-1.png)
 
-Let's now check that linting also works inside the `<template>` block: add `<div v-for="n in 5">{{ n }}</div>` on a new line right under `<HelloWorld>`, we should see another red squiggly and on hover [image 3]  (I'll leave it to you to figure out what this error is about).
+This allows us to use different `eslint` versions for different projects, so of course we're gonna accept!
+
+Let's now see what happens if we make the most common (and probably the most hated, too) code inaccuracy (because it's not really a mistake) - declaring an unused variable: add `const a = 10` on a new line right under the `import`. We can immediately see a red squiggly under `a`, signaling that there's something wrong with our code. Hovering over it we get:
+
+![](/images/eslint-2.png)
+
+From `eslint(no-unused-vars)` we can deduce it's an `eslint` error because we're breaking the `no-unused-vars` rule. If a rule sounds weird to you (they usually do!) and want to know more you can click on "Quick Fix" -> "Show documentation for ...". Doing that in our case gets us to the [`no-unused-vars` rule documentation page](https://eslint.org/docs/rules/no-unused-vars).
+
+Let's now check that linting also works inside the `<template>` block: add `<div v-for="n in 5">{{ n }}</div>` on a new line right under `<HelloWorld>`, we should see another red squiggly and on hover:
+
+![](/images/eslint-3.png)
+
+(I'll leave it to you to figure out what this error is about).
 
 You've probably already noticed that we get the error twice and thought "What's up with that?!". One thing that it's not immediately obvious is that [`vetur` also validates](https://github.com/vuejs/vetur/blob/master/docs/linting-error.md) `<template>`, `<script>` and `<style>` blocks in SFCs, and we end up getting the same error twice - one from `eslint` itself, and the other from `vetur`, using `eslint-plugin-vue` to validate the `<template>` block. This happens for historical reasons, back when `eslint` didn't know how to directly parse and validate `.vue` files, and it was `vetur`'s responsibility to parse them and run `eslint` separately for the found `<template>` and `<script>` blocks. Because `eslint` now supports parsing `.vue` files and validating `<template>` and `<script>` blocks, we should disable this redundant checking by `vetur`:
 
-```json
+```jsonc
 // VSCode settings.json
 {
   // ...
@@ -74,7 +88,11 @@ You've probably already noticed that we get the error twice and thought "What's 
 
 We'll still keep `vetur`'s `<style>` validation for now, which uses [VSCode's built-in CSS validation](https://code.visualstudio.com/docs/languages/css#_syntax-verification-linting). You can disable it using `"vetur.validation.style": false`.
 
-If we did everything right, we should now see the previous error only once: [image 4] And so we get our first achievement unlocked: VSCode linting expert! Actually there's tree more ways to lint your code that should now work out-of-the-box. We'll take a look at them next.
+If we did everything right, we should now see the previous error only once:
+
+![](/images/eslint-4.png)
+
+And so we get our first achievement unlocked: VSCode linting expert! Actually there's tree more ways to lint your code that should now work out-of-the-box. We'll take a look at them next.
 
 ### Linting from the terminal
 
@@ -131,7 +149,11 @@ D:\work\vue-simple-app\src\App.vue
  @ multi (webpack)-dev-server/client?http://192.168.1.16:8080&sockPath=/sockjs-node (webpack)/hot/dev-server.js ./src/main.js
 ```
 
-and a similar error overlay in the browser: [image 5] If we now remove the error and save everything should go back to normal - the app compiles and the error overlay goes away.
+and a similar error overlay in the browser:
+
+![](/images/eslint-5.png)
+
+If we now remove the error and save everything should go back to normal - the app compiles and the error overlay goes away.
 
 This usually annoy the hell out of people (and eventually make them hate `eslint` and never use it again in their life, before giving up on web development entirely) when e.g. commenting out a piece of code and getting lots of `no-unused-vars` errors and that dreaded error overlay, so they now have to find and comment all those unused declarations before things go back to normal and they can continue coding away. We'll see how we can elegantly tackle this a bit later, but until then, if you really want to feel better and disable `eslint` in the dev-server, create a `vue.config.js` in the project folder (if not already there) and set [`lintOnSave`](https://cli.vuejs.org/config/#lintonsave) like this:
 

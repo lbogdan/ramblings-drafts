@@ -1,4 +1,4 @@
-# Vue.js, ESLint and Prettier - Why can't we be friends?
+# Vue.js, ESLint and Prettier - [Why can't we be friends?](https://youtu.be/nmhgi665Oek?t=165)
 
 ## Motivation etc.
 
@@ -235,7 +235,7 @@ The most important part (and the only one we'll be fiddling with) of the `eslint
 
 We can get the list of all available `eslint` rules [here](https://eslint.org/docs/rules/) and of Vue.js (added by the `eslint-plugin-vue` package) [here](https://eslint.vuejs.org/rules/).
 
-Because trying to figure out which `eslint` rules are active at any point is quite tedious (not to say error-prone), there's an `eslint` helper command that allows us to see the exact config `eslint` uses for linting a certain file: `yarn eslint --print-config filename`. Let's check what Vue.js are currently enabled while linting our `App.vue` file:
+Because trying to figure out which `eslint` rules are active at any point is quite tedious (not to say error-prone), there's an `eslint` helper command that allows us to see the exact config `eslint` uses for linting a certain file: `yarn eslint --print-config filename`. Let's check which Vue.js rules are currently enabled while linting our `App.vue` file:
 
 ```sh
 # Vue.js rules begin with 'vue/'
@@ -285,7 +285,13 @@ module.exports = {
 
 ### Fix me, baby, one more time!
 
-- `const re = new RegExp(/  /);`
+As I said earlier, some linting rules can be auto-fixed. To see how this works, let's clear all errors from `App.vue` and add a new line right under `import` - `const re = new RegExp(/  /)`. You'll notice that besides `no-unused-vars` we get a new error, `no-regex-spaces`. If we hover over it and click on "Quick Fix..." we see a new menu option "Fix this no-regex-spaces problem":
+
+![](/images/eslint-6.png)
+
+If we click on it the error goes away and our newly added code is replaced with `const re = new RegExp(/ {2}/)`. Magic! There aren't that many rules that support auto-fixing, but this will come in handy when meeting `prettier` in a bit.
+
+To go a step further, because clicking on those small links and menus to fix things is annoying, we can configure VSCode to do that for us every time we save:
 
 ```jsonc
 // VSCode settings.json
@@ -296,6 +302,8 @@ module.exports = {
   }
 }
 ```
+
+Now if we try to re-add the initial code and save, VSCode should fix all auto-fixable rules for us.
 
 ### Introducing Prettier - your handsome code pal
 

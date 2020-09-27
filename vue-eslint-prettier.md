@@ -37,11 +37,13 @@ Vue CLI v4.5.6
 ? Save this as a preset for future projects? No
 ```
 
-## First achievement: VSCode linting expert
+
+
+## First achievement: VSCode linting expert!
 
 If you're already using VSCode, you can use this trick(?) to start it with a clean slate while keeping your current settings untouched.
 
-For this article I'm using the following minimal VSCode configuration:
+Just for reference, for this article I'm using the following minimal VSCode configuration:
 ```json
 {
     "telemetry.enableCrashReporter": false,
@@ -73,20 +75,19 @@ Let's now check that linting also works inside the `<template>` block: add `<div
 
 ![](/images/eslint-3.png)
 
-(I'll leave it to you to figure out what this error is about).
+I'll leave it to you to figure out what this error is about.
 
 You've probably already noticed that we get the error twice and thought "What's up with that?!". One thing that it's not immediately obvious is that [`vetur` also validates](https://github.com/vuejs/vetur/blob/master/docs/linting-error.md) `<template>`, `<script>` and `<style>` blocks in SFCs, and we end up getting the same error twice - one from `eslint` itself, and the other from `vetur`, using `eslint-plugin-vue` to validate the `<template>` block. This happens for historical reasons, back when `eslint` didn't know how to directly parse and validate `.vue` files, and it was `vetur`'s responsibility to parse them and run `eslint` separately for the found `<template>` and `<script>` blocks. Because `eslint` now supports parsing `.vue` files and validating `<template>` and `<script>` blocks, we should disable this redundant checking by `vetur`:
 
 ```jsonc
-// VSCode settings.json
+// .vscode/settings.json
 {
-  // ...
   "vetur.validation.script": false,
   "vetur.validation.template": false
 }
 ```
 
-(I usually place this project-dependent settings in the VSCode's Workspace config, that's stored in the `.vscode/settings.json` file, in the project folder. I also version them.)
+I usually place this project-dependent settings in the VSCode's Workspace config, that's stored in the `.vscode/settings.json` file, in the project folder. I also version them.
 
 We'll still keep `vetur`'s `<style>` validation for now, which uses [VSCode's built-in CSS validation](https://code.visualstudio.com/docs/languages/css#_syntax-verification-linting). You can disable it using `"vetur.validation.style": false`.
 
@@ -94,9 +95,9 @@ If we did everything right, we should now see the previous error only once:
 
 ![](/images/eslint-4.png)
 
-And so we get our first achievement unlocked: VSCode linting expert! Actually there's tree more ways to lint your code that should now work out-of-the-box. We'll take a look at them next.
+And so we get our first achievement unlocked: VSCode linting expert! Actually, there's tree more ways to lint your code that should now work out-of-the-box. We'll take a look at them next.
 
-### Linting from the terminal
+## Linting from the terminal
 
 You can manually lint all your project files by running `yarn lint` (or `npm run lint`, for the nostalgic) inside your project folder. Make sure you saved the two changes we did to `App.vue` and try it:
 
@@ -131,7 +132,7 @@ info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this comm
 
 This is very useful to be run as a commit hook so that teams can stay confident that all committed code is consistent with the agreed-upon linting rules. It can also be used to auto-fix the whole project codebase at once. We'll talk more about auto-fixing in a bit.
 
-### Linting during development
+## Linting during development
 
 Let's now try to run the dev-server. First undo the two `App.vue` changes we did earlier, save and run`yarn serve`. The dev-server should start and the app should be accessible at `http://localhost:8080/`. Open it in a browser and let's reintroduce the `const a = 10` inaccuracy. You'll notice we get an error from the dev-server:
 
@@ -157,7 +158,7 @@ and a similar error overlay in the browser:
 
 If we now remove the error and save everything should go back to normal - the app compiles and the error overlay goes away.
 
-This usually annoy the hell out of people (and eventually make them hate `eslint` and never use it again in their life, before giving up on web development entirely) when e.g. commenting out a piece of code and getting lots of `no-unused-vars` errors and that dreaded error overlay, so they now have to find and comment all those unused declarations before things go back to normal and they can continue coding away. We'll see how we can elegantly tackle this a bit later, but until then, if you really want to feel better and disable `eslint` in the dev-server, create a `vue.config.js` in the project folder (if not already there) and set [`lintOnSave`](https://cli.vuejs.org/config/#lintonsave) like this:
+This usually annoy the hell out of people (and eventually make them hate `eslint` and never use it again in their life, before giving up on web development entirely) when e.g. commenting out a piece of code and getting lots of `no-unused-vars` errors and that dreaded error overlay, so they now have to find and comment all those unused declarations before things go back to normal and they can continue coding away. In my opinion, this is an awful first-time developer experience. We'll see how we can elegantly tackle this soon, but until then, if you really want to feel better and disable `eslint` in the dev-server, create a `vue.config.js` (if not already there) in the project folder and set [`lintOnSave`](https://cli.vuejs.org/config/#lintonsave) like this:
 
 ```js
 // vue.config.js
@@ -170,7 +171,7 @@ module.exports = {
 
 This will only disable linting while in development, as I think it's still valuable to have it enabled when building a production bundle.
 
-### Linting when building a production bundle
+## Linting when building a production bundle
 
 By default (and with the `lintOnSave` configuration from the previous section), running a build with `yarn build` fails if there are any linting errors:
 
@@ -203,9 +204,9 @@ error Command failed with exit code 1.
 info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
 ```
 
-This is useful in CI, to do the linting and building in the same step vs. having an additional linting step.
+This is useful in CI, it allows us to do the linting and building in the same step vs. having an additional linting step.
 
-### ESLint configuration
+## "Do you have this in another color?"
 
 Now that we saw how `eslint` is supposed to behave with a default Vue CLI configuration, let's see how we can bend it to our will. While `eslint` supports a [handful of configuration file types](https://eslint.org/docs/user-guide/configuring#configuration-file-formats), Vue CLI uses `.eslintrc.js`, which by default has the following contents:
 
@@ -232,9 +233,9 @@ module.exports = {
 
 Why a `.js` config? Because it allows us to programmatically generate the config. This can be very useful if we want to enable, disable or change rules config depending on the environment, like we can see above.
 
-The most important part (and the only one we'll be fiddling with) of the `eslint` config is the linting rules. Instead of listing all the rules in our project's config, we can extend preset configs carefully crafted by people smarter than us. We can see the default Vue CLI `eslint` config extends two such presets: [`node_modules/eslint-plugin-vue/lib/config/essential.js`](https://unpkg.com/browse/eslint-plugin-vue@6.2.2/lib/configs/essential.js) and [`node_modules/eslint/conf/eslint-recommended.js`](https://unpkg.com/browse/eslint@6.8.0/conf/eslint-recommended.js). If we want to customize these presets, we can override the rules config with the `rules: { ... }` object. We can see in the default config the rules `no-console` and `no-debugger` are turned off in development, and configured to generate a warning when building for production (note that, by default, the production build will still fail if we use any `console.log()` or `debugger` statements in our code, ever if they're configured as warnings).
+The most important part (and the only one we'll be fiddling with) of the `eslint` config is the linting rules. Instead of listing all the rules in our project's config, we can extend preset configs carefully crafted by people smarter than us. We can see the default Vue CLI `eslint` config extends two such presets: [`node_modules/eslint-plugin-vue/lib/config/essential.js`](https://unpkg.com/browse/eslint-plugin-vue@6.2.2/lib/configs/essential.js) and [`node_modules/eslint/conf/eslint-recommended.js`](https://unpkg.com/browse/eslint@6.8.0/conf/eslint-recommended.js). If we want to customize these presets, we can override the rules config within the `rules: { ... }` object. We can see in the default config the rules `no-console` and `no-debugger` are turned off in development, and configured to generate a warning when building for production (note that, by default, the production build will still fail if we use any `console.log()` or `debugger` statements in our code, even if they're configured as warnings).
 
-We can get the list of all available `eslint` rules [here](https://eslint.org/docs/rules/) and of Vue.js (added by the `eslint-plugin-vue` package) [here](https://eslint.vuejs.org/rules/).
+We can check the list of all available `eslint` rules [here](https://eslint.org/docs/rules/) and of Vue.js (added by the `eslint-plugin-vue` package) [here](https://eslint.vuejs.org/rules/).
 
 Because trying to figure out which `eslint` rules are active at any point is quite tedious (not to say error-prone), there's an `eslint` helper command that allows us to see the exact config `eslint` uses for linting a certain file: `yarn eslint --print-config filename`. Let's check which Vue.js rules are currently enabled while linting our `App.vue` file:
 
@@ -251,7 +252,7 @@ $ yarn eslint --print-config src/App.vue | grep 'vue/' -A2
 [...]
 ```
 
-### Some better defaults, maybe?
+## Some better defaults, maybe?
 
 (?)
 
@@ -284,18 +285,18 @@ module.exports = {
 
 - use of `plugin:vue/recommended`
 
-### Fix me, baby, one more time!
+## Fix me, baby, one more time!
 
 As I said earlier, some linting rules can be auto-fixed. To see how this works, let's clear all errors from `App.vue` and add a new line right under `import` - `const re = new RegExp(/  /)`. You'll notice that besides `no-unused-vars` we get a new error, `no-regex-spaces`. If we hover over it and click on "Quick Fix..." we see a new menu option "Fix this no-regex-spaces problem":
 
 ![](/images/eslint-6.png)
 
-If we click on it the error goes away and our newly added code is replaced with `const re = new RegExp(/ {2}/)`. Magic! There aren't that many rules that support auto-fixing, but this will come in handy when meeting `prettier` in a bit.
+If we click on it the error goes away and our newly added code is replaced with `const re = new RegExp(/ {2}/)`. Magic! There aren't that many rules that support auto-fixing, but this will come in handy when meeting `prettier` soon.
 
-To go a step further, because clicking on those small links and menus to fix things is annoying, we can configure VSCode to do that for us every time we save:
+To go a step further, because clicking on those small links and menus to fix things is quite annoying, we can configure VSCode to do this for us every time we save:
 
 ```jsonc
-// VSCode settings.json
+// .vscode/settings.json
 {
   // ...
   "editor.codeActionsOnSave": {
@@ -306,7 +307,7 @@ To go a step further, because clicking on those small links and menus to fix thi
 
 Now if we try to re-add the initial code and save, VSCode should fix all auto-fixable rules for us. More magic!
 
-### Exceptions, exceptions
+## Exceptions, exceptions...
 
 We have a saying in Romania, "It's the exception that confirms the rule". So you have a nice `eslint` config, everything is good in the world, but suddenly you stumble over an exception to one of linting rules. What to do? Should you disable the rule for your whole codebase? Of course not! `eslint` offers ways to temporarily disable one or all rules for a specific piece of code by adding [special-syntax comments](https://eslint.org/docs/user-guide/configuring#using-configuration-comments). Because I love explicitness, the one I use the most is `eslint-disable-next-line rule-name`, and it works like this:
 
@@ -318,20 +319,15 @@ const a = 10;
 and inside the `<template>`:
 
 ```html
-<template>
-  <div id="app">
-    <img alt="Vue logo" src="./assets/logo.png">
-    <HelloWorld msg="Welcome to Your Vue.js App"/>
     <!-- eslint-disable-line vue/require-v-for-key -->
     <div v-for="i in 5">{{ i }}</div>
-  </div>
-</template>
 ```
-(Note this is only for demonstration purposes, you should **always use a key with `v-for`**!)
+
+Note this is only for demonstration purposes, you should **always use a key with `v-for`**!
 
 You should not over-use this, if you find yourself locally disabling the same rule over and over again, it's probably wiser to just disable it globally in the `eslint` config.
 
-### Introducing Prettier - your handsome code pal
+## Introducing Prettier - your handsome code pal
 
 (?)
 

@@ -37,7 +37,7 @@ Vue CLI v4.5.6
 ? Save this as a preset for future projects? No
 ```
 
-
+(? link to app repo)
 
 ## First achievement: VSCode linting expert!
 
@@ -329,19 +329,61 @@ You should not over-use this, if you find yourself locally disabling the same ru
 
 ## Introducing Prettier - your handsome code pal
 
-(?)
+So we now have a working `eslint` config perfectly catered to our needs. Do we also need `prettier`? Some developers argue `eslint` already has formatting rules, so your don't really yet another code formatting tool. While the first part is true, `eslint`'s formatting capabilities are quite limited - for example, `eslint` will never reflow your code if one line exceeds a number of characters, or even touch `<template>` formatting.
 
-- `yarn add --dev prettier eslint-plugin-prettier @vue/eslint-config-prettier`
+This is where `prettier` comes in. It is a very (and I mean extremely) opinionated code formatting tool that nicely reflows your code based on its opinionated defaults and a handful of [configuration options](https://prettier.io/docs/en/options.html). This should lower your cognitive overhead while writing code, never having to ask yourself "Should I put a trailing comma here? What about a semicolon there?" ever again, while also ensuring formatting consistency across your codebase.
+
+This leads to an endless source of developer frustration - trying to setup `prettier` separately from `eslint`. Because `eslint` has its own formatting rules, what usually happens is that `prettier` formats your code, `eslint` sees the changes as auto-fixable errors, but fixing them upsets `prettier`, which will format your code again, and so on, and so forth. So here's a brilliant idea: what if instead of running `eslint` and `prettier` as separate tools, we could use them together? That's how `eslint-plugin-prettier` was born, a plugin that adds a new `prettier/prettier` rule to `eslint` which will run prettier on your code and transform the differences into auto-fixable `eslint` warnings. This is usually used together with `eslint-config-prettier`, which disables all `eslint` formatting rules that could conflict with `prettier` formatting.
+
+This might sound a bit confusing, so let's see an example:
+
+![](/images/eslint-7.png)
+
+Here we messed a bit with the `components: {...}` formatting, and we see `eslint` giving us an auto-fixable `prettier/prettier` warning saying we should insert two spaces in front of `HelloWorld` to fix formatting. Now, if we have auto-fix on save enabled, we can just save and our code goes back to being all nice and cuddly.
+
+To add `prettier` to our simple Vue.js app, we first have to install the needed packages - `yarn add --dev prettier eslint-plugin-prettier @vue/eslint-config-prettier`, and then tell `eslint` to use them, by adding `@vue/prettier` to the `extends: [...]` array in our `.eslintrc.js`:
 
 ```js
 // .eslintrc.js
 module.exports = {
   // ...
   'extends': [
-    'plugin:vue/essential',
+    'plugin:vue/recommended',
     'eslint:recommended',
     '@vue/prettier'
   ],
   // ...
 }
 ```
+
+Yes, it's this simple! Just one more extra-step to set some `prettier` options by creating a `.prettierrc` file inside our projects' folder (these are just my personal preferences):
+
+```jsonc
+// .prettierrc
+{
+  "printWidth": 120,
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "es5"
+}
+```
+
+We can now re-format our whole project according to these options by running `yarn lint`:
+
+```sh
+$ yarn lint
+yarn run v1.22.5
+$ vue-cli-service lint
+The following files have been auto-fixed:
+
+  src\App.vue
+  src\components\HelloWorld.vue
+  src\main.js
+  .eslintrc.js
+  babel.config.js
+
+ DONE  All lint errors auto-fixed.
+Done in 1.59s.
+```
+
+Note that `yarn lint` fixes all `eslint` auto-fixable rules by default, if you don't want that you can use `yarn lint --no-fix`.

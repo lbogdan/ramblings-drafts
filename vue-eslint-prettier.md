@@ -5,7 +5,7 @@
 (?)
 
 ## Life goals
-- have a consistent (and pleasant!) `eslint` linting experience in VSCode, `vue-cli-service` and on the command line, inside a Vue.js project
+- have a consistent (and pleasant!) `eslint` linting experience in VSCode, `vue-cli-service` and on the command line, while working with a Vue.js project
 - use `prettier` to auto-format code on save or from the command line
 - make `eslint` and `prettier` behave like friends, not enemies fighting over your code
 
@@ -21,6 +21,7 @@ A quick list of the tools and versions I'm using for this tutorial(?):
   - Vetur 0.28.0
   - ESLint 2.1.8  
 - @vue/cli 4.5.6 (used to create a bare-bone project)
+
 I'm also using Git Bash from [Git for Windows](https://git-scm.com/download/win) as a terminal, because, well, I'm old and grumpy and still using Windows.
 
 We'll start with a very simple Vue app created by running `vue create vue-simple-app` with the following settings:
@@ -96,9 +97,9 @@ And so we get our first achievement unlocked: VSCode linting expert! Actually th
 
 ### Linting from the terminal
 
-You can manually lint all your project files by running `yarn lint` (or `npm run lint`, for the nostalgics) inside your project folder. Make sure you saved the two changes we did to `App.vue` and try it:
+You can manually lint all your project files by running `yarn lint` (or `npm run lint`, for the nostalgic) inside your project folder. Make sure you saved the two changes we did to `App.vue` and try it:
 
-```
+```sh
 $ yarn lint
 yarn run v1.22.5
 $ vue-cli-service lint
@@ -133,7 +134,7 @@ This is very useful to be run as a commit hook so that teams can stay confident 
 
 Let's now try to run the dev-server. First undo the two `App.vue` changes we did earlier, save and run`yarn serve`. The dev-server should start and the app should be accessible at `http://localhost:8080/`. Open it in a browser and let's reintroduce the `const a = 10` inaccuracy. You'll notice we get an error from the dev-server:
 
-```
+```sh
  ERROR  Failed to compile with 1 errors                                            18:17:04
  error  in ./src/App.vue
 
@@ -172,7 +173,7 @@ This will only disable linting while in development, as I think it's still valua
 
 By default (and with the `lintOnSave` configuration from the previous section), running a build with `yarn build` fails if there are any linting errors:
 
-```
+```sh
 $ yarn build
 yarn run v1.22.5
 $ vue-cli-service build
@@ -228,13 +229,73 @@ module.exports = {
 }
 ```
 
-Why a `.js` config? Because it allows us to programatically generate the config. This can be very useful if we want to enable, disable or change rules config depending on the environment, like we can see above.
+Why a `.js` config? Because it allows us to programmatically generate the config. This can be very useful if we want to enable, disable or change rules config depending on the environment, like we can see above.
 
-The most important part (and the only one we'll be fiddling with) of the `eslint` config is the linting rules. Instead of listing all the rules in our project's config, we can extend preset configs carefully crafted by people smarter than us. We can see the default Vue CLI `eslint` config extends two such presets: [`node_modules/eslint-plugin-vue/lib/config/essential.js`](https://unpkg.com/browse/eslint-plugin-vue@6.2.2/lib/configs/essential.js) and [`node_modules/eslint/conf/eslint-recommended.js`](https://unpkg.com/browse/eslint@6.8.0/conf/eslint-recommended.js). If we want to customize these presets, we can override the rules config with the `rules: { ... }` object. We can see in the default config the rules `no-console` and `no-debugger` are turned off in development, and configured to generate a warning when building for production (note that, by default, the production build will still fail if we use any `console.log()`s or `debugger`s in our code, ever if they're configured as warnings).
+The most important part (and the only one we'll be fiddling with) of the `eslint` config is the linting rules. Instead of listing all the rules in our project's config, we can extend preset configs carefully crafted by people smarter than us. We can see the default Vue CLI `eslint` config extends two such presets: [`node_modules/eslint-plugin-vue/lib/config/essential.js`](https://unpkg.com/browse/eslint-plugin-vue@6.2.2/lib/configs/essential.js) and [`node_modules/eslint/conf/eslint-recommended.js`](https://unpkg.com/browse/eslint@6.8.0/conf/eslint-recommended.js). If we want to customize these presets, we can override the rules config with the `rules: { ... }` object. We can see in the default config the rules `no-console` and `no-debugger` are turned off in development, and configured to generate a warning when building for production (note that, by default, the production build will still fail if we use any `console.log()` or `debugger` statements in our code, ever if they're configured as warnings).
+
+We can get the list of all available `eslint` rules [here](https://eslint.org/docs/rules/) and of Vue.js (added by the `eslint-plugin-vue` package) [here](https://eslint.vuejs.org/rules/).
+
+Because trying to figure out which `eslint` rules are active at any point is quite tedious (not to say error-prone), there's an `eslint` helper command that allows us to see the exact config `eslint` uses for linting a certain file: `yarn eslint --print-config filename`. Let's check what Vue.js are currently enabled while linting our `App.vue` file:
+
+```sh
+# Vue.js rules begin with 'vue/'
+# grep -A2 shows two more line after the matched one
+$ yarn eslint --print-config src/App.vue | grep 'vue/' -A2
+    "vue/no-async-in-computed-properties": [
+      "error"
+    ],
+    "vue/no-dupe-keys": [
+      "error"
+    ],
+[...]
+```
 
 ### Some better defaults, maybe?
 
 (?)
+
+```js
+// .eslintrc.js
+function disableInDevelopment(rules) {
+  return rules.reduce((acc, rule) => {
+    // warn in development, error in production
+    // to completely disable in development, use 'off' instead of 'warn'
+    acc[rule] = process.env.NODE_ENV === 'production' ? 'error' : 'warn';
+    return acc;
+  }, {});
+}
+
+module.exports = {
+  root: true,
+  env: {
+    node: true,
+  },
+  extends: ['plugin:vue/recommended', 'eslint:recommended', '@vue/prettier'],
+  parserOptions: {
+    parser: 'babel-eslint',
+  },
+  rules: {
+    ...disableInDevelopment(['no-console', 'no-debugger', 'no-unused-vars']),
+    // other custom rules here
+  },
+};
+```
+
+- use of `plugin:vue/recommended`
+
+### Fix me, baby, one more time!
+
+- `const re = new RegExp(/  /);`
+
+```jsonc
+// VSCode settings.json
+{
+  // ...
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": true
+  }
+}
+```
 
 ### Introducing Prettier - your handsome code pal
 

@@ -15,7 +15,7 @@ We're gonna follow a hands-on approach, first playing around to get a feel of th
 
 ## Getting our feet wet
 
-A quick list of the tools and versions I'm using for this tutorial(?):
+A quick list of the tools and versions I'm using for this article:
 - Visual Studio Code 1.49.2
 - VSCode extensions:
   - Vetur 0.28.0
@@ -41,7 +41,7 @@ Vue CLI v4.5.6
 
 If you're already using VSCode, you can use this trick(?) to start it with a clean slate while keeping your current settings untouched.
 
-For this tutorial(?) I'm using the following minimal VSCode configuration:
+For this article I'm using the following minimal VSCode configuration:
 ```json
 {
     "telemetry.enableCrashReporter": false,
@@ -50,7 +50,8 @@ For this tutorial(?) I'm using the following minimal VSCode configuration:
     "terminal.integrated.shell.windows": "C:\\Program Files\\Git\\bin\\bash.exe",
     "editor.tabSize": 2,
     "files.eol": "\n",
-    "terminal.integrated.rendererType": "experimentalWebgl"
+    "terminal.integrated.rendererType": "experimentalWebgl",
+    "editor.rulers": [80, 120]
 }
 ```
 
@@ -68,7 +69,7 @@ Let's now see what happens if we make the most common (and probably the most hat
 
 From `eslint(no-unused-vars)` we can deduce it's an `eslint` error because we're breaking the `no-unused-vars` rule. If a rule sounds weird to you (they usually do!) and want to know more you can click on "Quick Fix" -> "Show documentation for ...". Doing that in our case gets us to the [`no-unused-vars` rule documentation page](https://eslint.org/docs/rules/no-unused-vars).
 
-Let's now check that linting also works inside the `<template>` block: add `<div v-for="n in 5">{{ n }}</div>` on a new line right under `<HelloWorld>`, we should see another red squiggly and on hover:
+Let's now check that linting also works inside the `<template>` block: add `<div v-for="i in 5">{{ i }}</div>` on a new line right under `<HelloWorld>`, we should see another red squiggly and on hover:
 
 ![](/images/eslint-3.png)
 
@@ -128,7 +129,7 @@ error Command failed with exit code 1.
 info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command.
 ```
 
-This is very useful to be run as a commit hook so that teams can stay confident that all committed code is consistent with the agreed-upon linting rules. It can also be used to auto-fix the whole project code-base at once. We'll talk more about auto-fixing in a bit.
+This is very useful to be run as a commit hook so that teams can stay confident that all committed code is consistent with the agreed-upon linting rules. It can also be used to auto-fix the whole project codebase at once. We'll talk more about auto-fixing in a bit.
 
 ### Linting during development
 
@@ -303,7 +304,32 @@ To go a step further, because clicking on those small links and menus to fix thi
 }
 ```
 
-Now if we try to re-add the initial code and save, VSCode should fix all auto-fixable rules for us.
+Now if we try to re-add the initial code and save, VSCode should fix all auto-fixable rules for us. More magic!
+
+### Exceptions, exceptions
+
+We have a saying in Romania, "It's the exception that confirms the rule". So you have a nice `eslint` config, everything is good in the world, but suddenly you stumble over an exception to one of linting rules. What to do? Should you disable the rule for your whole codebase? Of course not! `eslint` offers ways to temporarily disable one or all rules for a specific piece of code by adding [special-syntax comments](https://eslint.org/docs/user-guide/configuring#using-configuration-comments). Because I love explicitness, the one I use the most is `eslint-disable-next-line rule-name`, and it works like this:
+
+```js
+// eslint-disable-next-line no-unused-vars
+const a = 10;
+```
+
+and inside the `<template>`:
+
+```html
+<template>
+  <div id="app">
+    <img alt="Vue logo" src="./assets/logo.png">
+    <HelloWorld msg="Welcome to Your Vue.js App"/>
+    <!-- eslint-disable-line vue/require-v-for-key -->
+    <div v-for="i in 5">{{ i }}</div>
+  </div>
+</template>
+```
+(Note this is only for demonstration purposes, you should **always use a key with `v-for`**!)
+
+You should not over-use this, if you find yourself locally disabling the same rule over and over again, it's probably wiser to just disable it globally in the `eslint` config.
 
 ### Introducing Prettier - your handsome code pal
 

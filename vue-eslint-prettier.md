@@ -433,7 +433,7 @@ Note that `yarn lint` fixes all `eslint` auto-fixable rules by default, if that'
 
 And with this last bit of magic, we're done!
 
-We can check the final version of our simple app with all the configs in the [final branch](https://github.com/lbogdan/vue-simple-app/tree/final).
+You can check out the final version of our simple app with all the configs in the [final branch](https://github.com/lbogdan/vue-simple-app/tree/final).
 
 ## Feedback is 50
 

@@ -1,15 +1,26 @@
+*published on: September 28, 2020*
+
 # Vue.js, ESLint and Prettier - [Why can't we be friends?](https://youtu.be/nmhgi665Oek?t=165)
 
-## Motivation etc.
+## Wait but why?
 
-(?)
+You might wonder "There's already a good amount of articles (and even videos) out there explaining how to use ESLint and Prettier with Vue.js, why write yet another one?". It's a legitimate question. I went through some of them, and while there are a couple of good ones, in my opinion they all fall short in one or more things that I think any good article / tutorial should absolutely respect:
+
+- start from a clean slate and stating the exact versions of the tools used throughout;
+- be up to date (too many developers taking up a new technology are discouraged by struggling with outdated articles);
+- explain **how** things work and **why** you should do something, instead of showing pieces of code or configuration that you should just copy/paste.
+
+If this article ends up helping (or frustrating) you in any way, I'd appreciate leaving me some [feedback](#feedback-is-50).
 
 ## Life goals
-- have a consistent (and pleasant!) `eslint` linting experience in VSCode, `vue-cli-service` and on the command line, while working with a Vue.js project
-- use `prettier` to auto-format code on save or from the command line
-- make `eslint` and `prettier` behave like friends, not enemies fighting over your code
 
-I know this all sounds very ambitious (especially the last one!), but I promise we'll get there!
+So what can you expect from this article? Hopefully it will check all the boxes above, plus the ones below:
+
+- have a consistent (and pleasant!) `eslint` linting experience in VSCode, `vue-cli-service` and on the command line, while working with a Vue.js project;
+- use `prettier` to auto-format code on save or from the command line;
+- make `eslint` and `prettier` behave like friends, not enemies fighting over your code.
+
+I know this all sounds very ambitious (especially the last one!), but I promise we'll get there in the end!
 
 We're gonna follow a hands-on approach, first playing around to get a feel of the behavior, and then digging into why and how things work behind the covers.
 
@@ -20,7 +31,7 @@ A quick list of the tools and versions I'm using for this article:
 - VSCode extensions:
   - Vetur 0.28.0
   - ESLint 2.1.8  
-- @vue/cli 4.5.6 (used to create a bare-bone project)
+- @vue/cli 4.5.6 (used to create a simple app project)
 
 I'm also using Git Bash from [Git for Windows](https://git-scm.com/download/win) as a terminal, because, well, I'm old and grumpy and still using Windows.
 
@@ -37,11 +48,18 @@ Vue CLI v4.5.6
 ? Save this as a preset for future projects? No
 ```
 
-(? link to app repo)
+You can also get the exact app I'm using throughout this article from this [GitHub repository](https://github.com/lbogdan/vue-simple-app).
 
 ## First achievement: VSCode linting expert!
 
-If you're already using VSCode, you can use this trick(?) to start it with a clean slate while keeping your current settings untouched.
+If you're already using VSCode, you can use this trick to start it with a clean slate while keeping your current settings untouched:
+
+```sh
+# run this in a *sh (ash, bash etc.) terminal
+$ mkdir -p ~/.vscode-vue/extensions
+$ alias code-vue="code --user-data-dir ~/.vscode-vue --extensions-dir ~/.vscode-vue/extensions"
+$ code-vue
+```
 
 Just for reference, for this article I'm using the following minimal VSCode configuration:
 ```json
@@ -61,23 +79,23 @@ I also (only) have `Vetur` and `ESLint` extensions installed.
 
 Let's open the app folder in VSCode and open the `src/Vue.app` file. We should see a dialog asking us if we want to use our project's local `eslint` version from `node_modules`:
 
-![](/images/eslint-1.png)
+![](/images/vue-eslint-prettier/1.png)
 
-This allows us to use different `eslint` versions for different projects, so of course we're gonna accept!
+This allows us to use different `eslint` versions for different projects, so of course we're gonna allow!
 
 Let's now see what happens if we make the most common (and probably the most hated, too) code inaccuracy (because it's not really a mistake) - declaring an unused variable: add `const a = 10` on a new line right under the `import`. We can immediately see a red squiggly under `a`, signaling that there's something wrong with our code. Hovering over it we get:
 
-![](/images/eslint-2.png)
+![](/images/vue-eslint-prettier/2.png)
 
-From `eslint(no-unused-vars)` we can deduce it's an `eslint` error because we're breaking the `no-unused-vars` rule. If a rule sounds weird to you (they usually do!) and want to know more you can click on "Quick Fix" -> "Show documentation for ...". Doing that in our case gets us to the [`no-unused-vars` rule documentation page](https://eslint.org/docs/rules/no-unused-vars).
+From the text `eslint(no-unused-vars)` we can deduce it's an `eslint` error because we're breaking the `no-unused-vars` rule. If a rule sounds weird to you (they usually do!) and want to know more about it you can click on "Quick Fix" -> "Show documentation for ...". Doing that in our case gets us to the [`no-unused-vars` rule documentation page](https://eslint.org/docs/rules/no-unused-vars).
 
 Let's now check that linting also works inside the `<template>` block: add `<div v-for="i in 5">{{ i }}</div>` on a new line right under `<HelloWorld>`, we should see another red squiggly and on hover:
 
-![](/images/eslint-3.png)
+![](/images/vue-eslint-prettier/3.png)
 
-I'll leave it to you to figure out what this error is about.
+I'll leave it to you to figure out what that error is about.
 
-You've probably already noticed that we get the error twice and thought "What's up with that?!". One thing that it's not immediately obvious is that [`vetur` also validates](https://github.com/vuejs/vetur/blob/master/docs/linting-error.md) `<template>`, `<script>` and `<style>` blocks in SFCs, and we end up getting the same error twice - one from `eslint` itself, and the other from `vetur`, using `eslint-plugin-vue` to validate the `<template>` block. This happens for historical reasons, back when `eslint` didn't know how to directly parse and validate `.vue` files, and it was `vetur`'s responsibility to parse them and run `eslint` separately for the found `<template>` and `<script>` blocks. Because `eslint` now supports parsing `.vue` files and validating `<template>` and `<script>` blocks, we should disable this redundant checking by `vetur`:
+You've probably already noticed that we get the error twice and thought "What's up with that?!". One thing that it's not immediately obvious is that [`vetur` also validates](https://github.com/vuejs/vetur/blob/master/docs/linting-error.md) the `<template>`, `<script>` and `<style>` blocks in SFCs, and we end up getting the same error twice - one from `eslint` itself, and the other from `vetur`, using `eslint-plugin-vue` to validate the `<template>` block. This happens for historical reasons, back when `eslint` didn't know how to directly parse and validate `.vue` files, and it was `vetur`'s responsibility to parse them and run `eslint` separately for the found `<template>` and `<script>` blocks. Because `eslint` now supports parsing `.vue` files and validating `<template>` and `<script>` blocks, we should disable this redundant checking by `vetur`:
 
 ```jsonc
 // .vscode/settings.json
@@ -93,9 +111,9 @@ We'll still keep `vetur`'s `<style>` validation for now, which uses [VSCode's bu
 
 If we did everything right, we should now see the previous error only once:
 
-![](/images/eslint-4.png)
+![](/images/vue-eslint-prettier/4.png)
 
-And so we get our first achievement unlocked: VSCode linting expert! Actually, there's tree more ways to lint your code that should now work out-of-the-box. We'll take a look at them next.
+And so we get our first achievement unlocked: VSCode linting expert! Actually, there's three more ways to lint your code that should now work out-of-the-box. We'll take a look at them next.
 
 ## Linting from the terminal
 
@@ -154,11 +172,11 @@ D:\work\vue-simple-app\src\App.vue
 
 and a similar error overlay in the browser:
 
-![](/images/eslint-5.png)
+![](/images/vue-eslint-prettier/5.png)
 
 If we now remove the error and save everything should go back to normal - the app compiles and the error overlay goes away.
 
-This usually annoy the hell out of people (and eventually make them hate `eslint` and never use it again in their life, before giving up on web development entirely) when e.g. commenting out a piece of code and getting lots of `no-unused-vars` errors and that dreaded error overlay, so they now have to find and comment all those unused declarations before things go back to normal and they can continue coding away. In my opinion, this is an awful first-time developer experience. We'll see how we can elegantly tackle this soon, but until then, if you really want to feel better and disable `eslint` in the dev-server, create a `vue.config.js` (if not already there) in the project folder and set [`lintOnSave`](https://cli.vuejs.org/config/#lintonsave) like this:
+This usually annoys the hell out of people (and eventually make them hate `eslint` and never use it again in their life, before giving up on web development entirely) when e.g. commenting out a piece of code and getting lots of `no-unused-vars` errors and that dreaded error overlay, so they now have to find and comment all those unused declarations before things go back to normal and they can continue coding away. In my opinion, this is an awful first-time developer experience. We'll see how we can elegantly tackle this soon, but until then, if you really want to feel better and disable `eslint` in the dev-server, create a `vue.config.js` (if not already there) in the project folder and set [`lintOnSave`](https://cli.vuejs.org/config/#lintonsave) like this:
 
 ```js
 // vue.config.js
@@ -211,7 +229,7 @@ This is useful in CI, it allows us to do the linting and building in the same st
 Now that we saw how `eslint` is supposed to behave with a default Vue CLI configuration, let's see how we can bend it to our will. While `eslint` supports a [handful of configuration file types](https://eslint.org/docs/user-guide/configuring#configuration-file-formats), Vue CLI uses `.eslintrc.js`, which by default has the following contents:
 
 ```js
-// .eslintrc.js
+// default .eslintrc.js
 module.exports = {
   root: true,
   env: {
@@ -231,13 +249,13 @@ module.exports = {
 }
 ```
 
-Why a `.js` config? Because it allows us to programmatically generate the config. This can be very useful if we want to enable, disable or change rules config depending on the environment, like we can see above.
+Why a `.js` config? Because it allows us to programmatically generate the config. This can be very useful if we want to enable, disable or change rules config depending on the environment, like we see above.
 
-The most important part (and the only one we'll be fiddling with) of the `eslint` config is the linting rules. Instead of listing all the rules in our project's config, we can extend preset configs carefully crafted by people smarter than us. We can see the default Vue CLI `eslint` config extends two such presets: [`node_modules/eslint-plugin-vue/lib/config/essential.js`](https://unpkg.com/browse/eslint-plugin-vue@6.2.2/lib/configs/essential.js) and [`node_modules/eslint/conf/eslint-recommended.js`](https://unpkg.com/browse/eslint@6.8.0/conf/eslint-recommended.js). If we want to customize these presets, we can override the rules config within the `rules: { ... }` object. We can see in the default config the rules `no-console` and `no-debugger` are turned off in development, and configured to generate a warning when building for production (note that, by default, the production build will still fail if we use any `console.log()` or `debugger` statements in our code, even if they're configured as warnings).
+The most important part (and the only one we'll be fiddling with) of the `eslint` config is the linting rules. Instead of listing all the rules in our project's config, we can extend preset configs carefully crafted by people with more experience. We can see the default Vue CLI `eslint` config extends two such presets: [`node_modules/eslint-plugin-vue/lib/config/essential.js`](https://unpkg.com/browse/eslint-plugin-vue@6.2.2/lib/configs/essential.js) and [`node_modules/eslint/conf/eslint-recommended.js`](https://unpkg.com/browse/eslint@6.8.0/conf/eslint-recommended.js). If we want to customize these presets, we can override the rules config within the `rules: { ... }` object. We can see in the default config the rules `no-console` and `no-debugger` are turned off in development, and configured to generate a warning when building for production (note that, by default, the production build will still fail if we use any `console.log()` or `debugger` statements in our code, even if they're configured as warnings).
 
 We can check the list of all available `eslint` rules [here](https://eslint.org/docs/rules/) and of Vue.js (added by the `eslint-plugin-vue` package) [here](https://eslint.vuejs.org/rules/).
 
-Because trying to figure out which `eslint` rules are active at any point is quite tedious (not to say error-prone), there's an `eslint` helper command that allows us to see the exact config `eslint` uses for linting a certain file: `yarn eslint --print-config filename`. Let's check which Vue.js rules are currently enabled while linting our `App.vue` file:
+Because following the configs and presets trying to figure out which `eslint` rules are active at any given moment is quite tedious (not to say error-prone), there's an `eslint` helper command that allows us to see the exact config `eslint` uses for linting a certain file: `yarn eslint --print-config filename`. Let's check which Vue.js rules are currently enabled while linting our `App.vue` file:
 
 ```sh
 # Vue.js rules begin with 'vue/'
@@ -252,44 +270,11 @@ $ yarn eslint --print-config src/App.vue | grep 'vue/' -A2
 [...]
 ```
 
-## Some better defaults, maybe?
-
-(?)
-
-```js
-// .eslintrc.js
-function disableInDevelopment(rules) {
-  return rules.reduce((acc, rule) => {
-    // warn in development, error in production
-    // to completely disable in development, use 'off' instead of 'warn'
-    acc[rule] = process.env.NODE_ENV === 'production' ? 'error' : 'warn';
-    return acc;
-  }, {});
-}
-
-module.exports = {
-  root: true,
-  env: {
-    node: true,
-  },
-  extends: ['plugin:vue/recommended', 'eslint:recommended', '@vue/prettier'],
-  parserOptions: {
-    parser: 'babel-eslint',
-  },
-  rules: {
-    ...disableInDevelopment(['no-console', 'no-debugger', 'no-unused-vars']),
-    // other custom rules here
-  },
-};
-```
-
-- use of `plugin:vue/recommended`
-
 ## Fix me, baby, one more time!
 
 As I said earlier, some linting rules can be auto-fixed. To see how this works, let's clear all errors from `App.vue` and add a new line right under `import` - `const re = new RegExp(/  /)`. You'll notice that besides `no-unused-vars` we get a new error, `no-regex-spaces`. If we hover over it and click on "Quick Fix..." we see a new menu option "Fix this no-regex-spaces problem":
 
-![](/images/eslint-6.png)
+![](/images/vue-eslint-prettier/6.png)
 
 If we click on it the error goes away and our newly added code is replaced with `const re = new RegExp(/ {2}/)`. Magic! There aren't that many rules that support auto-fixing, but this will come in handy when meeting `prettier` soon.
 
@@ -307,11 +292,69 @@ To go a step further, because clicking on those small links and menus to fix thi
 
 Now if we try to re-add the initial code and save, VSCode should fix all auto-fixable rules for us. More magic!
 
+## Some better defaults, maybe?
+
+Let's now try to make the whole `eslint` experience more enjoyable (or at least less frustrating). The idea is to make common rules, which might trigger while you're editing code - like `no-console`, `no-unused-vars` etc. - be warnings (which show with yellow squiggles in VSCode, and also don't break your development builds, like errors do), or even completely disable them, if you prefer:
+
+```js
+// .eslintrc.js
+function disableInDevelopment(rules) {
+  return rules.reduce((acc, rule) => {
+    // warn in development, error in production
+    // to completely disable in development, use 'off' instead of 'warn'
+    acc[rule] = process.env.NODE_ENV === 'production' ? 'error' : 'warn';
+    return acc;
+  }, {});
+}
+
+module.exports = {
+  root: true,
+  env: {
+    node: true,
+  },
+  extends: ['plugin:vue/recommended', 'eslint:recommended'],
+  parserOptions: {
+    parser: 'babel-eslint',
+  },
+  rules: {
+    // add other annoying rules to the array below
+    ...disableInDevelopment(['no-console', 'no-debugger', 'no-unused-vars']),
+    // other custom rules here
+  },
+};
+```
+
+We're using [`plugin:vue/recommended`](https://unpkg.com/browse/eslint-plugin-vue@6.2.2/lib/configs/recommended.js) here, which is a more opinionated preset than `plugin:vue/essential`, but you can change it back if it's too opinionated for you. Otherwise, we can already see some new warnings in `src/App.vue` and `src/components/HelloWorld.vue` - a few template ones and this:
+
+![](/images/vue-eslint-prettier/8.png)
+
+which can be fixed by:
+
+```js
+// src/components/HelloWorld.vue
+// ...
+<script>
+export default {
+  name: 'HelloWorld',
+  props: {
+    msg: {
+      type: String,
+      default: ''
+    }
+  }
+}
+</script>
+// ...
+```
+
+and now if we save, the template warnings are also auto-fixed. Even more magic!
+
 ## Exceptions, exceptions...
 
 We have a saying in Romania, "It's the exception that confirms the rule". So you have a nice `eslint` config, everything is good in the world, but suddenly you stumble over an exception to one of linting rules. What to do? Should you disable the rule for your whole codebase? Of course not! `eslint` offers ways to temporarily disable one or all rules for a specific piece of code by adding [special-syntax comments](https://eslint.org/docs/user-guide/configuring#using-configuration-comments). Because I love explicitness, the one I use the most is `eslint-disable-next-line rule-name`, and it works like this:
 
 ```js
+// we really, really, REALLY want to declare a and not use it anywhere!
 // eslint-disable-next-line no-unused-vars
 const a = 10;
 ```
@@ -319,27 +362,30 @@ const a = 10;
 and inside the `<template>`:
 
 ```html
+    <!-- if there's no lock, why do we need a key?! -->
     <!-- eslint-disable-line vue/require-v-for-key -->
     <div v-for="i in 5">{{ i }}</div>
 ```
 
 Note this is only for demonstration purposes, you should **always use a key with `v-for`**!
 
-You should not over-use this, if you find yourself locally disabling the same rule over and over again, it's probably wiser to just disable it globally in the `eslint` config.
+You should not over-use this - if you find yourself locally disabling the same rule over and over again, it's probably wiser to just disable it globally in the `eslint` config.
 
 ## Introducing Prettier - your handsome code pal
 
-So we now have a working `eslint` config perfectly catered to our needs. Do we also need `prettier`? Some developers argue `eslint` already has formatting rules, so your don't really yet another code formatting tool. While the first part is true, `eslint`'s formatting capabilities are quite limited - for example, `eslint` will never reflow your code if one line exceeds a number of characters, or even touch `<template>` formatting.
+So we now have a working `eslint` config perfectly catered to our needs. Do we also need `prettier`? Some developers argue `eslint` already has formatting rules, so you don't really need yet another code formatting tool. While the first part is true, `eslint`'s formatting capabilities are quite limited - for example, `eslint` will never reflow your code if one line exceeds a number of characters, or even touch `<template>` formatting.
 
-This is where `prettier` comes in. It is a very (and I mean extremely) opinionated code formatting tool that nicely reflows your code based on its opinionated defaults and a handful of [configuration options](https://prettier.io/docs/en/options.html). This should lower your cognitive overhead while writing code, never having to ask yourself "Should I put a trailing comma here? What about a semicolon there?" ever again, while also ensuring formatting consistency across your codebase.
+This is where `prettier` comes in. It is a very (and I mean extremely!) opinionated code formatting tool that nicely reflows your code based on its opinionated defaults and a handful of [configuration options](https://prettier.io/docs/en/options.html). This should lower your cognitive overhead while writing code, never having to ask yourself "Should I put a trailing comma here? What about a semicolon there?" ever again, while also ensuring formatting consistency across your codebase.
 
-This leads to an endless source of developer frustration - trying to setup `prettier` separately from `eslint`. Because `eslint` has its own formatting rules, what usually happens is that `prettier` formats your code, `eslint` sees the changes as auto-fixable errors, but fixing them upsets `prettier`, which will format your code again, and so on, and so forth. So here's a brilliant idea: what if instead of running `eslint` and `prettier` as separate tools, we could use them together? That's how `eslint-plugin-prettier` was born, a plugin that adds a new `prettier/prettier` rule to `eslint` which will run prettier on your code and transform the differences into auto-fixable `eslint` warnings. This is usually used together with `eslint-config-prettier`, which disables all `eslint` formatting rules that could conflict with `prettier` formatting.
+This leads to an endless source of developer frustration - trying to setup `prettier` separately from `eslint`. Because `eslint` has its own formatting rules, what usually happens is that `prettier` formats your code, `eslint` sees the changes as auto-fixable errors, but fixing them upsets `prettier`, which will format your code again, and so on, and so forth. This is the point at which developers just give up and decide to never use `prettier` alongside `eslint`, as they can't coexist together.
+
+So here's a brilliant idea: what if instead of running `eslint` and `prettier` as separate tools, we could use them together? That's how `eslint-plugin-prettier` was born, a plugin that adds a new `prettier/prettier` rule to `eslint` which will run prettier on your code and transform the differences into auto-fixable `eslint` warnings. This is usually used together with `eslint-config-prettier`, which disables all `eslint` formatting rules that could conflict with `prettier` formatting.
 
 This might sound a bit confusing, so let's see an example:
 
-![](/images/eslint-7.png)
+![](/images/vue-eslint-prettier/7.png)
 
-Here we messed a bit with the `components: {...}` formatting, and we see `eslint` giving us an auto-fixable `prettier/prettier` warning saying we should insert two spaces in front of `HelloWorld` to fix formatting. Now, if we have auto-fix on save enabled, we can just save and our code goes back to being all nice and cuddly.
+Here we messed a bit with the `components: {...}` formatting, and we see `eslint` giving us an auto-fixable `prettier/prettier` warning saying we should insert two spaces in front of `HelloWorld` to fix formatting. Now, if we have auto-fix on save enabled, we can just save and our code goes back to being all nice and cute and cuddly.
 
 To add `prettier` to our simple Vue.js app, we first have to install the needed packages - `yarn add --dev prettier eslint-plugin-prettier @vue/eslint-config-prettier`, and then tell `eslint` to use them, by adding `@vue/prettier` to the `extends: [...]` array in our `.eslintrc.js`:
 
@@ -348,15 +394,12 @@ To add `prettier` to our simple Vue.js app, we first have to install the needed 
 module.exports = {
   // ...
   'extends': [
-    'plugin:vue/recommended',
-    'eslint:recommended',
-    '@vue/prettier'
-  ],
+    'plugin:vue/recommended', 'eslint:recommended', '@vue/prettier'],
   // ...
 }
 ```
 
-Yes, it's this simple! Just one more extra-step to set some `prettier` options by creating a `.prettierrc` file inside our projects' folder (these are just my personal preferences):
+Yes, it's that simple! Just one more extra-step to set some `prettier` options by creating a `.prettierrc` file inside our projects' folder (these are just my personal preferences):
 
 ```jsonc
 // .prettierrc
@@ -368,7 +411,7 @@ Yes, it's this simple! Just one more extra-step to set some `prettier` options b
 }
 ```
 
-We can now re-format our whole project according to these options by running `yarn lint`:
+and we can now re-format our whole project according to these options by running `yarn lint`:
 
 ```sh
 $ yarn lint
@@ -386,4 +429,12 @@ The following files have been auto-fixed:
 Done in 1.59s.
 ```
 
-Note that `yarn lint` fixes all `eslint` auto-fixable rules by default, if you don't want that you can use `yarn lint --no-fix`.
+Note that `yarn lint` fixes all `eslint` auto-fixable rules by default, if that's not what you want, you can use `yarn lint --no-fix`.
+
+And with this last bit of magic, we're done!
+
+We can check the final version of our simple app with all the configs in the [final branch](https://github.com/lbogdan/vue-simple-app/tree/final).
+
+## Feedback is 50
+
+If you have questions, or any kind of feedback, you can either [open an issue](https://github.com/lbogdan/ramblings/issues/new) or find me on the [Vue.js's official Discord server](https://chat.vuejs.org/) - I'm `BogdanL` there.

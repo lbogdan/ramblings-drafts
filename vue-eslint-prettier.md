@@ -1,8 +1,8 @@
-*published on: September 28, 2020*
+_published on: September 28, 2020_
 
 # Vue.js, ESLint and Prettier - [Why can't we be friends?](https://youtu.be/nmhgi665Oek?t=165)
 
-## Wait but why?
+## Wait, but why?
 
 You might wonder "There's already a good amount of articles (and even videos) out there explaining how to use ESLint and Prettier with Vue.js, why write yet another one?". It's a legitimate question. I went through some of them, and while there are a couple of good ones, in my opinion they all fall short in one or more things that I think any good article / tutorial should absolutely respect:
 
@@ -27,10 +27,11 @@ We're gonna follow a hands-on approach, first playing around to get a feel of th
 ## Getting our feet wet
 
 A quick list of the tools and versions I'm using for this article:
+
 - Visual Studio Code 1.49.2
 - VSCode extensions:
   - Vetur 0.28.0
-  - ESLint 2.1.8  
+  - ESLint 2.1.8
 - @vue/cli 4.5.6 (used to create a simple app project)
 
 I'm also using Git Bash from [Git for Windows](https://git-scm.com/download/win) as a terminal, because, well, I'm old and grumpy and still using Windows.
@@ -62,16 +63,17 @@ $ code-vue
 ```
 
 Just for reference, for this article I'm using the following minimal VSCode configuration:
+
 ```json
 {
-    "telemetry.enableCrashReporter": false,
-    "telemetry.enableTelemetry": false,
-    "workbench.list.openMode": "doubleClick",
-    "terminal.integrated.shell.windows": "C:\\Program Files\\Git\\bin\\bash.exe",
-    "editor.tabSize": 2,
-    "files.eol": "\n",
-    "terminal.integrated.rendererType": "experimentalWebgl",
-    "editor.rulers": [80, 120]
+  "telemetry.enableCrashReporter": false,
+  "telemetry.enableTelemetry": false,
+  "workbench.list.openMode": "doubleClick",
+  "terminal.integrated.shell.windows": "C:\\Program Files\\Git\\bin\\bash.exe",
+  "editor.tabSize": 2,
+  "files.eol": "\n",
+  "terminal.integrated.rendererType": "experimentalWebgl",
+  "editor.rulers": [80, 120]
 }
 ```
 
@@ -183,8 +185,8 @@ This usually annoys the hell out of people (and eventually make them hate `eslin
 module.exports = {
   // ignore linting errors while in development
   // fail production build if there are linting errors
-  lintOnSave: process.env.NODE_ENV === 'production' ? 'error' : false
-}
+  lintOnSave: process.env.NODE_ENV === "production" ? "error" : false,
+};
 ```
 
 This will only disable linting while in development, as I think it's still valuable to have it enabled when building a production bundle.
@@ -233,20 +235,17 @@ Now that we saw how `eslint` is supposed to behave with a default Vue CLI config
 module.exports = {
   root: true,
   env: {
-    node: true
+    node: true,
   },
-  'extends': [
-    'plugin:vue/essential',
-    'eslint:recommended'
-  ],
+  extends: ["plugin:vue/essential", "eslint:recommended"],
   parserOptions: {
-    parser: 'babel-eslint'
+    parser: "babel-eslint",
   },
   rules: {
-    'no-console': process.env.NODE_ENV === 'production' ? 'warn' : 'off',
-    'no-debugger': process.env.NODE_ENV === 'production' ? 'warn' : 'off'
-  }
-}
+    "no-console": process.env.NODE_ENV === "production" ? "warn" : "off",
+    "no-debugger": process.env.NODE_ENV === "production" ? "warn" : "off",
+  },
+};
 ```
 
 Why a `.js` config? Because it allows us to programmatically generate the config. This can be very useful if we want to enable, disable or change rules config depending on the environment, like we see above.
@@ -272,7 +271,7 @@ $ yarn eslint --print-config src/App.vue | grep 'vue/' -A2
 
 ## Fix me, baby, one more time!
 
-As I said earlier, some linting rules can be auto-fixed. To see how this works, let's clear all errors from `App.vue` and add a new line right under `import` - `const re = new RegExp(/  /)`. You'll notice that besides `no-unused-vars` we get a new error, `no-regex-spaces`. If we hover over it and click on "Quick Fix..." we see a new menu option "Fix this no-regex-spaces problem":
+As I said earlier, some linting rules can be auto-fixed. To see how this works, let's clear all errors from `App.vue` and add a new line right under `import` - `const re = new RegExp(/ /)`. You'll notice that besides `no-unused-vars` we get a new error, `no-regex-spaces`. If we hover over it and click on "Quick Fix..." we see a new menu option "Fix this no-regex-spaces problem":
 
 ![](/images/vue-eslint-prettier/6.png)
 
@@ -302,7 +301,7 @@ function disableInDevelopment(rules) {
   return rules.reduce((acc, rule) => {
     // warn in development, error in production
     // to completely disable in development, use 'off' instead of 'warn'
-    acc[rule] = process.env.NODE_ENV === 'production' ? 'error' : 'warn';
+    acc[rule] = process.env.NODE_ENV === "production" ? "error" : "warn";
     return acc;
   }, {});
 }
@@ -312,13 +311,13 @@ module.exports = {
   env: {
     node: true,
   },
-  extends: ['plugin:vue/recommended', 'eslint:recommended'],
+  extends: ["plugin:vue/recommended", "eslint:recommended"],
   parserOptions: {
-    parser: 'babel-eslint',
+    parser: "babel-eslint",
   },
   rules: {
     // add other annoying rules to the array below
-    ...disableInDevelopment(['no-console', 'no-debugger', 'no-unused-vars']),
+    ...disableInDevelopment(["no-console", "no-debugger", "no-unused-vars"]),
     // other custom rules here
   },
 };
@@ -362,9 +361,9 @@ const a = 10;
 and inside the `<template>`:
 
 ```html
-    <!-- if there's no lock, why do we need a key?! -->
-    <!-- eslint-disable-line vue/require-v-for-key -->
-    <div v-for="i in 5">{{ i }}</div>
+<!-- if there's no lock, why do we need a key?! -->
+<!-- eslint-disable-line vue/require-v-for-key -->
+<div v-for="i in 5">{{ i }}</div>
 ```
 
 Note this is only for demonstration purposes, you should **always use a key with `v-for`**!
@@ -393,10 +392,9 @@ To add `prettier` to our simple Vue.js app, we first have to install the needed 
 // .eslintrc.js
 module.exports = {
   // ...
-  'extends': [
-    'plugin:vue/recommended', 'eslint:recommended', '@vue/prettier'],
+  extends: ["plugin:vue/recommended", "eslint:recommended", "@vue/prettier"],
   // ...
-}
+};
 ```
 
 Yes, it's that simple! Just one more extra-step to set some `prettier` options by creating a `.prettierrc` file inside our projects' folder (these are just my personal preferences):

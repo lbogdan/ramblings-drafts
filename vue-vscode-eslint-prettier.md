@@ -378,7 +378,7 @@ and inside the `<template>`:
     <div v-for="i in 5">{{ i }}</div>
 ```
 
-Note this is only for demonstration purposes, you should **always use a key with `v-for`**!
+> **Note:** this is only for demonstration purposes, you should **always use a key with `v-for`**!
 
 You should not over-use this - if you find yourself locally disabling the same rule over and over again, it's probably wiser to just disable it globally in the `eslint` config.
 
@@ -440,7 +440,7 @@ The following files have been auto-fixed:
 Done in 1.59s.
 ```
 
-Note that `yarn lint` fixes all `eslint` auto-fixable rules by default, if that's not what you want, you can use `yarn lint --no-fix`.
+> **Note:** `yarn lint` fixes all `eslint` auto-fixable rules by default, if that's not what you want, you can use `yarn lint --no-fix`.
 
 And with this last bit of magic, we're done!
 
